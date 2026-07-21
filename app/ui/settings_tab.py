@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -32,12 +33,15 @@ class SettingsTab(QWidget):
         self.model = QLineEdit()
         self.word_check = QComboBox()
         self.word_check.addItems(["off", "immediate", "on_finish"])
+        self.tts_device = QComboBox()
+        self.tts_device.addItems(["cuda", "cpu"])
         save = QPushButton("Save")
         save.clicked.connect(self._save)
 
         layout.addRow("OpenRouter API key", self.api_key)
         layout.addRow("AI model", self.model)
         layout.addRow("Word check mode", self.word_check)
+        layout.addRow("TTS device", self.tts_device)
         layout.addRow(save)
 
         self.docs_box = QGroupBox("Context documents")
@@ -51,6 +55,7 @@ class SettingsTab(QWidget):
         self.api_key.setText(settings.openrouter_api_key)
         self.model.setText(settings.ai_model)
         self.word_check.setCurrentText(settings.word_check_mode)
+        self.tts_device.setCurrentText(settings.tts_device)
         self._reload_documents()
 
     def _save(self) -> None:
@@ -59,6 +64,7 @@ class SettingsTab(QWidget):
                 openrouter_api_key=self.api_key.text().strip(),
                 ai_model=self.model.text().strip(),
                 word_check_mode=cast_mode(self.word_check.currentText()),
+                tts_device=cast_device(self.tts_device.currentText()),
             )
         )
         QMessageBox.information(self, "Settings", "Saved.")
@@ -114,3 +120,7 @@ def cast_mode(value: str) -> WordCheckMode:
     if value in ("off", "immediate", "on_finish"):
         return value  # type: ignore[return-value]
     return "on_finish"
+
+
+def cast_device(value: str) -> Literal["cuda", "cpu"]:
+    return "cuda" if value == "cuda" else "cpu"
