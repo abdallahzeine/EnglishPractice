@@ -2,7 +2,7 @@ from typing import Literal, cast
 
 from app.core.database import SessionFactory
 from app.domain.models import AppSettings, TypingMetrics, WordCheckMode
-from app.domain.tables import SettingsRow, TypingSessionRow
+from app.domain.tables import ReadingSessionRow, SettingsRow, TypingSessionRow
 
 
 class SettingsRepository:
@@ -41,3 +41,18 @@ class PracticeSessionRepository:
                 )
             )
             session.commit()
+
+    def save_reading_session(self, passage_id: int, kind: str, correct: bool) -> None:
+        with SessionFactory() as session:
+            session.add(
+                ReadingSessionRow(
+                    passage_id=passage_id, question_kind=kind, correct=correct
+                )
+            )
+            session.commit()
+
+    def reading_stats(self) -> tuple[int, int]:
+        """Returns (correct answers, total answers)."""
+        with SessionFactory() as session:
+            rows = session.query(ReadingSessionRow).all()
+            return sum(1 for r in rows if r.correct), len(rows)

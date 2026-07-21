@@ -3,7 +3,7 @@ import os
 from langchain_openrouter import ChatOpenRouter
 from pydantic import BaseModel
 
-from app.domain.models import AppSettings, WordFeedback
+from app.domain.models import AppSettings, Question, WordFeedback
 
 
 class _WordCheckResponse(BaseModel):
@@ -36,3 +36,23 @@ class AIService:
             ]
         )
         return response.feedback
+
+    def generate_question(self, passage_text: str) -> Question:
+        generator = self._model.with_structured_output(Question)
+        return generator.invoke(
+            [
+                (
+                    "system",
+                    "You create reading-comprehension questions for English "
+                    "learners. Create exactly one question about the passage, "
+                    "choosing one kind:\n"
+                    "- mcq: 4 options, answer is the correct option text\n"
+                    "- matching: options are 'left|right' pairs to match\n"
+                    "- simple: a short-answer question, answer is the expected "
+                    "answer\n"
+                    "- fill_blank: prompt contains '____', answer is the "
+                    "missing word or phrase",
+                ),
+                ("user", passage_text),
+            ]
+        )

@@ -48,3 +48,13 @@ class TypingSessionRow(Base):
     accuracy: Mapped[float]
     elapsed_seconds: Mapped[float]
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
+
+class ReadingSessionRow(Base):
+    __tablename__ = "reading_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    passage_id: Mapped[int] = mapped_column(ForeignKey("passages.id"))
+    question_kind: Mapped[str]
+    correct: Mapped[bool]
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
