@@ -35,6 +35,12 @@ class SettingsTab(QWidget):
         self.word_check.addItems(["off", "immediate", "on_finish"])
         self.tts_device = QComboBox()
         self.tts_device.addItems(["cuda", "cpu"])
+        self.cpu_warning = QLabel("CPU works but is slow — audio is generated once per passage.")
+        self.cpu_warning.setStyleSheet("color: #b26a00;")
+        self.cpu_warning.hide()
+        self.tts_device.currentTextChanged.connect(
+            lambda text: self.cpu_warning.setVisible(text == "cpu")
+        )
         save = QPushButton("Save")
         save.clicked.connect(self._save)
 
@@ -42,6 +48,7 @@ class SettingsTab(QWidget):
         layout.addRow("AI model", self.model)
         layout.addRow("Word check mode", self.word_check)
         layout.addRow("TTS device", self.tts_device)
+        layout.addRow("", self.cpu_warning)
         layout.addRow(save)
 
         self.docs_box = QGroupBox("Context documents")
@@ -56,6 +63,7 @@ class SettingsTab(QWidget):
         self.model.setText(settings.ai_model)
         self.word_check.setCurrentText(settings.word_check_mode)
         self.tts_device.setCurrentText(settings.tts_device)
+        self.cpu_warning.setVisible(settings.tts_device == "cpu")
         self._reload_documents()
 
     def _save(self) -> None:
