@@ -1,7 +1,9 @@
 import time
 
+from PyQt6.QtCore import QPropertyAnimation
 from PyQt6.QtWidgets import QLabel, QPlainTextEdit, QPushButton, QVBoxLayout, QWidget
 
+from app.core.animations import fade_in
 from app.domain.models import Passage, TypedWord
 from app.repositories.document_repository import DocumentRepository
 from app.repositories.session_repository import PracticeSessionRepository
@@ -17,6 +19,7 @@ class TypingTab(QWidget):
         self._passage: Passage | None = None
         self._start_time: float | None = None
         self._finished = False
+        self._metrics_animation: QPropertyAnimation | None = None
 
         self.new_btn = QPushButton("New passage")
         self.new_btn.clicked.connect(self._load_passage)
@@ -63,3 +66,4 @@ class TypingTab(QWidget):
                 f"WPM: {metrics.wpm}    Accuracy: {metrics.accuracy}%    "
                 f"Time: {metrics.elapsed_seconds}s"
             )
+            self._metrics_animation = fade_in(self.metrics_label)
