@@ -36,3 +36,26 @@ User data must be saved persistently in an SQLite database file named `Data.db`,
 
 **Project structure:**
 Must follow OOP and SOLID principles strictly. Must have a clear folder structure with clear naming of files and classes. Must use Pydantic and declare each value object; using `Any` or leaving types undeclared is not allowed.
+
+**Current layout (implemented):**
+```
+main.py                     # entry point
+app/
+  core/       config.py (paths, Data.db), database.py (engine/session), workers.py (TaskRunner), animations.py (fade_in/slide_in)
+  domain/     models.py (Pydantic value objects), tables.py (SQLAlchemy ORM)
+  services/   pdf_service, typing_engine (pure logic), ai_service (ChatOpenRouter), tts_service (Chatterbox)
+  repositories/  document_repository, session_repository (settings + practice sessions)
+  ui/         typing_tab, reading_tab, settings_tab, widgets/ (HighlightTextEdit, MessageBubble, BusyIndicator)
+tests/        test_typing_engine.py
+```
+
+**Conventions:**
+- DB access only inside `repositories/` (SQLAlchemy ORM, no raw SQL).
+- Slow/blocking calls (AI, TTS) run via `TaskRunner` on worker threads; only GUI-thread callbacks touch widgets.
+- `AIService` raises `ValueError` if the OpenRouter key is missing; UI surfaces it in a message box.
+- TTS model loads lazily on first sound-mode use; WAVs cached in `Documents/EnglishPractice/tts_cache`.
+
+**Commands:**
+- Setup: `uv venv --python 3.12 && uv pip install -e .` (or `uv sync`)
+- Run: `uv run python main.py`
+- Tests: `$env:PYTHONPATH='.'; uv run python tests/test_typing_engine.py`

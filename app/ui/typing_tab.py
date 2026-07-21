@@ -97,6 +97,7 @@ class TypingTab(QWidget):
         self._player.stop()
         self._audio_path = None
         self.play_btn.setEnabled(False)
+        self.input.setEnabled(self._passage is not None)
         if self._passage is None:
             self.original.show()
             self.original.setPlainText(
