@@ -1,7 +1,11 @@
 import time
+from pathlib import Path
 
-from PyQt6.QtCore import QPropertyAnimation
+from PyQt6.QtCore import QPropertyAnimation, QUrl
+from PyQt6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PyQt6.QtWidgets import (
+    QCheckBox,
+    QHBoxLayout,
     QLabel,
     QMessageBox,
     QPlainTextEdit,
@@ -19,6 +23,7 @@ from app.repositories.session_repository import (
     SettingsRepository,
 )
 from app.services.ai_service import AIService
+from app.services.tts_service import TTSService
 from app.services.typing_engine import compute_metrics, diff_words, is_finished
 from app.ui.widgets.busy_indicator import BusyIndicator
 from app.ui.widgets.highlight_text_edit import HighlightTextEdit
@@ -40,6 +45,12 @@ class TypingTab(QWidget):
 
         self.new_btn = QPushButton("New passage")
         self.new_btn.clicked.connect(self._load_passage)
+        self.sound_toggle = QCheckBox("Sound mode (listen instead of read)")
+        self.sound_toggle.toggled.connect(self._on_sound_toggled)
+        self.play_btn = QPushButton("Play audio")
+        self.play_btn.setEnabled(False)
+        self.play_btn.clicked.connect(self._play_audio)
+        self.audio_busy = BusyIndicator("Preparing audio…")
         self.original = HighlightTextEdit()
         self.input = QPlainTextEdit()
         self.input.textChanged.connect(self._on_text_changed)
@@ -49,8 +60,20 @@ class TypingTab(QWidget):
         self.feedback_layout = QVBoxLayout(self.feedback_container)
         self.feedback_layout.setContentsMargins(0, 0, 0, 0)
 
+        self._player = QMediaPlayer(self)
+        self._audio_output = QAudioOutput(self)
+        self._player.setAudioOutput(self._audio_output)
+        self._audio_path: Path | None = None
+
+        top_row = QHBoxLayout()
+        top_row.addWidget(self.new_btn)
+        top_row.addWidget(self.sound_toggle)
+        top_row.addWidget(self.play_btn)
+        top_row.addStretch(1)
+
         layout = QVBoxLayout(self)
-        layout.addWidget(self.new_btn)
+        layout.addLayout(top_row)
+        layout.addWidget(self.audio_busy)
         layout.addWidget(self.original, stretch=1)
         layout.addWidget(self.input, stretch=1)
         layout.addWidget(self.metrics_label)
@@ -71,7 +94,11 @@ class TypingTab(QWidget):
             item = self.feedback_layout.takeAt(0)
             if item.widget() is not None:
                 item.widget().deleteLater()
+        self._player.stop()
+        self._audio_path = None
+        self.play_btn.setEnabled(False)
         if self._passage is None:
+            self.original.show()
             self.original.setPlainText(
                 "No passages available. Import a PDF in Settings."
             )
@@ -79,6 +106,47 @@ class TypingTab(QWidget):
             self.original.render(
                 [TypedWord(word=w, status="pending") for w in self._passage.text.split()]
             )
+            self._apply_sound_mode()
+
+    def _on_sound_toggled(self, _checked: bool) -> None:
+        self._apply_sound_mode()
+
+    def _apply_sound_mode(self) -> None:
+        if self._passage is None:
+            return
+        if self.sound_toggle.isChecked():
+            self.original.hide()
+            if self._audio_path is None and not self.audio_busy.isVisible():
+                self._prepare_audio()
+        else:
+            self.original.show()
+
+    def _prepare_audio(self) -> None:
+        assert self._passage is not None
+        text = self._passage.text
+        self.audio_busy.show()
+        self._runner.start(
+            lambda: TTSService(SettingsRepository().load()).generate(text),
+            self._audio_ready,
+            self._audio_failed,
+        )
+
+    def _audio_ready(self, path: Path) -> None:
+        self.audio_busy.hide()
+        self._audio_path = path
+        self.play_btn.setEnabled(True)
+        self._play_audio()
+
+    def _audio_failed(self, message: str) -> None:
+        self.audio_busy.hide()
+        self.sound_toggle.setChecked(False)
+        QMessageBox.warning(self, "Audio generation failed", message)
+
+    def _play_audio(self) -> None:
+        if self._audio_path is None:
+            return
+        self._player.setSource(QUrl.fromLocalFile(str(self._audio_path)))
+        self._player.play()
 
     def _on_text_changed(self) -> None:
         if self._passage is None or self._finished:
@@ -103,6 +171,8 @@ class TypingTab(QWidget):
 
         if self._start_time is not None and is_finished(self._passage.text, typed):
             self._finished = True
+            if self.sound_toggle.isChecked():
+                self.original.show()  # reveal mistakes after sound-mode run
             elapsed = time.monotonic() - self._start_time
             metrics = compute_metrics(self._passage.text, typed, elapsed)
             self._sessions.save_typing_session(self._passage.id, metrics)
