@@ -5,6 +5,7 @@ from pydantic import BaseModel
 WordCheckMode = Literal["off", "immediate", "on_finish"]
 Practice = Literal["typing", "reading"]
 WordStatus = Literal["correct", "incorrect", "pending"]
+QuestionKind = Literal["mcq", "matching", "simple", "fill_blank"]
 
 
 class AppSettings(BaseModel):
@@ -42,3 +43,10 @@ class WordFeedback(BaseModel):
     word: str
     issue: str
     suggestion: str
+
+
+class Question(BaseModel):
+    kind: QuestionKind
+    prompt: str
+    options: list[str] = []
+    answer: str = ""
