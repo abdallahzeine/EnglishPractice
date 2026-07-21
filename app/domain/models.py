@@ -36,3 +36,9 @@ class TypingMetrics(BaseModel):
     wpm: float
     accuracy: float
     elapsed_seconds: float
+
+
+class WordFeedback(BaseModel):
+    word: str
+    issue: str
+    suggestion: str
