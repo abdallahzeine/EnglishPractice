@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,3 +37,14 @@ class PassageRow(Base):
     text: Mapped[str]
 
     document: Mapped[DocumentRow] = relationship(back_populates="passages")
+
+
+class TypingSessionRow(Base):
+    __tablename__ = "typing_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    passage_id: Mapped[int] = mapped_column(ForeignKey("passages.id"))
+    wpm: Mapped[float]
+    accuracy: Mapped[float]
+    elapsed_seconds: Mapped[float]
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
