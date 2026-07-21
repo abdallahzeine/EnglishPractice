@@ -1,8 +1,8 @@
 from typing import Literal, cast
 
 from app.core.database import SessionFactory
-from app.domain.models import AppSettings, WordCheckMode
-from app.domain.tables import SettingsRow
+from app.domain.models import AppSettings, TypingMetrics, WordCheckMode
+from app.domain.tables import SettingsRow, TypingSessionRow
 
 
 class SettingsRepository:
@@ -26,4 +26,18 @@ class SettingsRepository:
             row.word_check_mode = settings.word_check_mode
             row.tts_device = settings.tts_device
             session.add(row)
+            session.commit()
+
+
+class PracticeSessionRepository:
+    def save_typing_session(self, passage_id: int, metrics: TypingMetrics) -> None:
+        with SessionFactory() as session:
+            session.add(
+                TypingSessionRow(
+                    passage_id=passage_id,
+                    wpm=metrics.wpm,
+                    accuracy=metrics.accuracy,
+                    elapsed_seconds=metrics.elapsed_seconds,
+                )
+            )
             session.commit()

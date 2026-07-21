@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 WordCheckMode = Literal["off", "immediate", "on_finish"]
 Practice = Literal["typing", "reading"]
+WordStatus = Literal["correct", "incorrect", "pending"]
 
 
 class AppSettings(BaseModel):
@@ -24,3 +25,14 @@ class Passage(BaseModel):
     id: int
     text: str
     document_id: int
+
+
+class TypedWord(BaseModel):
+    word: str
+    status: WordStatus
+
+
+class TypingMetrics(BaseModel):
+    wpm: float
+    accuracy: float
+    elapsed_seconds: float
