@@ -43,7 +43,7 @@ main.py                     # entry point
 app/
   core/       config.py (paths, Data.db), database.py (engine/session), workers.py (TaskRunner), animations.py (fade_in/slide_in)
   domain/     models.py (Pydantic value objects), tables.py (SQLAlchemy ORM)
-  services/   pdf_service, typing_engine (pure logic), ai_service (ChatOpenRouter), tts_service (Chatterbox)
+  services/   pdf_service, typing_engine (pure logic), ai_service (ChatOpenRouter), tts_service (Kokoro-82M)
   repositories/  document_repository, session_repository (settings + practice sessions)
   ui/         typing_tab, reading_tab, settings_tab, widgets/ (HighlightTextEdit, MessageBubble, BusyIndicator)
 tests/        test_typing_engine.py
